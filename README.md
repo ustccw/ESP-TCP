@@ -7,3 +7,6 @@
 - **2. support simple TCP connection and TCP based on SSL/TLS.**  
 - **3. support ESP32,ESP8266RTOS,ESP8266NONOS,Ubuntu**  
  
+### TODO:
+- **1. complete every component**
+- **2. make a new branch for Chinese customer**
