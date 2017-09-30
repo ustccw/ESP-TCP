@@ -7,13 +7,13 @@
 
 ./**/build
 ./**/**/build
-./**/**/**/buildi
+./**/**/**/build
 
-./**/sdkconfig
-./**/**/sdkconfig
-./**/**/**/sdkconfig
+./*/sdkconfig
+./*/*/sdkconfig
+./*/*/*/sdkconfig
 
-./**/sdkconfig.old
-./**/**/sdkconfig.old
-./**/**/**/sdkconfig.old
+./*/sdkconfig.old
+./*/*/sdkconfig.old
+./*/*/*/sdkconfig.old
 
