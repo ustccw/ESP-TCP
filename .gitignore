@@ -1,7 +1,19 @@
 *.a
 *.d
 *.o
+.cproject
+.project
+
 
 ./**/build
 ./**/**/build
-./**/**/**/build
+./**/**/**/buildi
+
+./**/sdkconfig
+./**/**/sdkconfig
+./**/**/**/sdkconfig
+
+./**/sdkconfig.old
+./**/**/sdkconfig.old
+./**/**/**/sdkconfig.old
+
