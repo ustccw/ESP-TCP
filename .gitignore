@@ -8,11 +8,11 @@ build
 ./**/build
 ./**/**/build
 ./**/**/**/build
-
+sdkconfig
 ./*/sdkconfig
 ./*/*/sdkconfig
 ./*/*/*/sdkconfig
-
+sdkconfig.old
 ./*/sdkconfig.old
 ./*/*/sdkconfig.old
 ./*/*/*/sdkconfig.old
