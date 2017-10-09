@@ -1,4 +1,4 @@
-/* for honeywell by CW
+/* for json parse sample by CW
 
    This example code is in the Public Domain (or CC0 licensed, at your option.)
 
@@ -32,7 +32,7 @@ static uint8_t *pusrdata = NULL;
 static int server_socket = -1;
 static int ret = 0;
 static int got_ip_flag = 0;
-e_honeywell_errno current_state = PROCESS_INIT;
+e_sample_errno current_state = PROCESS_INIT;
 static const char *TAG = "tcp server";
 
 /* FreeRTOS event group to signal when we are connected & ready to make a request */
@@ -122,9 +122,9 @@ void print_debug(const char *data, const int len, const char *note)
 // tcp server response the client
 // server also can response in json format, but we would not
 // because it is complex for tcp client to adopt the json lib to parse
-void response_to_client(uint32_t cmd_id, int32_t honeywell_errno)
+void response_to_client(uint32_t cmd_id, int32_t sample_errno)
 {
-    ESP_LOGI(TAG, "honeywell errno:%d\n", honeywell_errno);
+    ESP_LOGI(TAG, "sample errno:%d\n", sample_errno);
     int ret = 0;
     if (old_client_fd < 0) {
         ESP_LOGE(TAG, "response to gateway failed");
@@ -146,7 +146,7 @@ void response_to_client(uint32_t cmd_id, int32_t honeywell_errno)
     ret = strlen(respond_buffer);
     sprintf(respond_buffer + ret, "\"direction\": \"%s\",", "ESP32ToClient");
     ret = strlen(respond_buffer);
-    sprintf(respond_buffer + ret, "\"errno\": %04d,", honeywell_errno);
+    sprintf(respond_buffer + ret, "\"errno\": %04d,", sample_errno);
     ret = strlen(respond_buffer);
     sprintf(respond_buffer + ret, "\"cmd_id\": %04d}", cmd_id);
     ret = strlen(respond_buffer);
@@ -175,7 +175,7 @@ int parse_gw_json_normal_data(uint8_t *buffer)
     int value_int = 0, ret = 0;
     uint32_t cmd_id = 0xffffffff;
     char *value_str = NULL;
-    e_honeywell_errno honeywell_errno =  HONEYWELL_OK;
+    e_sample_errno sample_errno =  SAMPLE_OK;
 
     ESP_LOGI(TAG, "parse data:%s", buffer);
     root = cJSON_Parse((char *)buffer);
@@ -192,8 +192,8 @@ int parse_gw_json_normal_data(uint8_t *buffer)
         ESP_LOGI(TAG, "Start Parse JSON Items:%d", i);
         item = cJSON_GetArrayItem(root, i);
         if (!item) {                            // parse item failed, reponse error code : -i * 100
-            honeywell_errno = -i * 100;
-            response_to_client(cmd_id, honeywell_errno);
+            sample_errno = -i * 100;
+            response_to_client(cmd_id, sample_errno);
             break;
         }
         ESP_LOGI(TAG, "parse JSON Items:%d found", i);
@@ -209,17 +209,17 @@ int parse_gw_json_normal_data(uint8_t *buffer)
         } else if (0 == strncmp(item->string, "lookup_state", sizeof("lookup_state") )) { // lookup config by current_state
             response_to_client(cmd_id, current_state);
 
-        } else if (0 == strncmp(item->string, "honeywell_para", sizeof("honeywell_para") )) {
+        } else if (0 == strncmp(item->string, "sample_para", sizeof("sample_para") )) {
             value_item = cJSON_GetObjectItem(item, "value");
             if (value_item) {
                 value_str = value_item->valuestring;
                 ESP_LOGI(TAG, "set:%s", value_str);
             } else {
-                response_to_client(cmd_id, JSON_PARSE_HONEYWELL_PARAMETER);
+                response_to_client(cmd_id, JSON_PARSE_SAMPLE_PARAMETER_FAILED);
                 return -1;
             }
-            current_state = PROCESS_HONEYWELL_PARA + (atoi(value_str) & 0xff);
-            // TODO: Config the honeywell parameter...
+            current_state = PROCESS_SAMPLE_PARA + (atoi(value_str) & 0xff);
+            // TODO: Config the sample parameter...
 
         } else if (0 == strncmp(item->string, "local_update", sizeof("local_update") )) {
             value_item = cJSON_GetObjectItem(item, "ssid");
@@ -263,8 +263,8 @@ int parse_gw_json_normal_data(uint8_t *buffer)
             return -1;
         }
     }
-    response_to_client(old_client_fd, HONEYWELL_OK);
-    return HONEYWELL_OK;
+    response_to_client(old_client_fd, SAMPLE_OK);
+    return SAMPLE_OK;
 }
 
 
@@ -276,18 +276,18 @@ void tcp_client_handle(void *pvParameters)
         ret = 0;
         uint32_t receive_cmd_length = 0;   // current total receive length
         uint32_t parse_cmd_length = 0;     // parse length from first 4 bytes
-        e_honeywell_errno honeywell_errno = HONEYWELL_OK;
+        e_sample_errno sample_errno = SAMPLE_OK;
         while (1) {
             ESP_LOGI(TAG, "prepare to receive next packet!");
             ESP_LOGI(TAG, "old_client_fd:%d receive_cmd_length:%d", old_client_fd, receive_cmd_length);
             ret = recv(old_client_fd, pusrdata + receive_cmd_length, MAX_JSON_LEN - receive_cmd_length, 0);
             ESP_LOGI(TAG, "TCP server received the packet!");
             if (ret < 0) { // lose connection
-                honeywell_errno = TCP_RCV_RET_NEGATIVE;
+                sample_errno = TCP_RCV_RET_NEGATIVE;
                 ESP_LOGE(TAG, "ret < 0");
                 break;
             } else if (ret == 0) {       // Client close socket actively
-                honeywell_errno = TCP_RCV_RET_ZERO;
+                sample_errno = TCP_RCV_RET_ZERO;
                 ESP_LOGW(TAG, "ret = 0");
                 break;
             } else {
@@ -299,7 +299,7 @@ void tcp_client_handle(void *pvParameters)
                         response_to_client(0xffffffff, TCP_REV_PARSE_CMD_BEYOND_MAX_JSON_LEN); // parse incorrect length
                         receive_cmd_length = 0;
                         parse_cmd_length = 0;
-                        honeywell_errno = HONEYWELL_OK;
+                        sample_errno = SAMPLE_OK;
                         continue;
                     }
                 }
@@ -312,7 +312,7 @@ void tcp_client_handle(void *pvParameters)
                 response_to_client(0xffffffff, TCP_REV_PARSE_CMD_LEN_ERROR); // incorrect length, restart to receive new tcp packet
                 receive_cmd_length = 0;
                 parse_cmd_length = 0;
-                honeywell_errno = HONEYWELL_OK;
+                sample_errno = SAMPLE_OK;
                 continue;
             } else {     // continue to receive rest tcp packet
                 continue;
@@ -321,7 +321,7 @@ void tcp_client_handle(void *pvParameters)
 
         if ( ret <= 0) {
             ESP_LOGW(TAG, "tcp receive data over, close client");
-            response_to_client(0xffffffff, honeywell_errno);
+            response_to_client(0xffffffff, sample_errno);
             close(old_client_fd);
             old_client_fd = -1;
             break;
@@ -350,7 +350,7 @@ static void tcp_server_task(void *pvParameter)
     tcpip_adapter_ip_info_t client_ip;
     memset(&client_ip, 0, sizeof(tcpip_adapter_ip_info_t));
 
-    pusrdata = (uint8_t *)malloc(MAX_JSON_LEN);
+    pusrdata = (uint8_t *)malloc(MAX_JSON_LEN + 4);
     if (!pusrdata) {
         ESP_LOGE(TAG, "tcp_server_task:%d malloc memory failed", __LINE__);
         return;

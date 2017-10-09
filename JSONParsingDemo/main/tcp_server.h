@@ -1,61 +1,35 @@
 #ifndef TCP_SERVER_H_
 #define TCP_SERVER_H_
+
 #define DEFAULT_GWSERVER_PORT 80    // tcp server port
 #define MAX_JSON_LEN 2920           // max json length allowed
 
-// e_honeywell_errno
-// e_honeywell_errno < 0 means that some error thing happened
+// e_sample_errno
+// e_sample_errno < 0 means that some error happened
+// e_sample_errno = 0 means that parse json OK
+// e_sample_errno > 0 means that lookup some information
 
 typedef enum {
-    HONEYWELL_OK = 0,
-    TCP_RCV_RET_NEGATIVE = -1,    // connection error
-    TCP_RCV_RET_ZERO = -2,        // close socket actively
-    TCP_REV_PARSE_CMD_LEN_ERROR = -3, // parse length from tcp stream big than max json length
-    JSON_PARSE_ROOT_FAILED = -4,  // json parse failed, the same as the following
+    SAMPLE_OK = 0,
+    TCP_RCV_RET_NEGATIVE = -1,          // connection error
+    TCP_RCV_RET_ZERO = -2,              // close socket actively
+    TCP_REV_PARSE_CMD_LEN_ERROR = -3,   // parse length from tcp stream big than max json length
+    JSON_PARSE_ROOT_FAILED = -4,        // json parse failed, the same as the following
     JSON_PARSE_NO_ITEM = -5,
-    JSON_PARSE_UUID_FAILED = -6,
-    JSON_PARSE_ERRNO_FAILED = -7,
-    JSON_PARSE_WORKMODE_FAILED = -8,
-    JSON_PARSE_ALARMCLOCK_POWERON_FAILED = -9,
-    JSON_PARSE_WORKAREA_FAILED = -10,
-    JSON_PARSE_CLEANSPEED_FAILED = -11,
-    JSON_PARSE_BACKWARD_FAILED = -12,
-    JSON_PARSE_FORWARD_FAILED = -13,
-    JSON_PARSE_LEFT_FAILED = -14,
-    JSON_PARSE_RIGHT_FAILED = -15,
-    JSON_PARSE_STOP_CLEAN_FAILED = -16,
-    JSON_PARSE_RESET_MATERIAL_FAILED = -17,
-    JSON_PARSE_FINDME_FAILED = -18,
-    JSON_PARSE_SPRAY_FAILED = -19,
-    JSON_PARSE_MAP_FREQUENCY_FAILED = -20,
-    JSON_PARSE_DND_SETTING_FAILED = -21,
+
+    // here would be more json parse error number
     JSON_PARSE_SSID_FAILED = -22,
     JSON_PARSE_PASSWD_FAILED = -23,
     JSON_PARSE_OTA_SERVER_ADDR_FAILED = -24,
     JSON_PARSE_OTA_SERVER_PORT_FAILED = -25,
-    JSON_PARSE_ONOFF_POWER_FAILED = -26,
+
     TCP_REV_PARSE_CMD_BEYOND_MAX_JSON_LEN = -27,
-    JSON_PARSE_HONEYWELL_PARAMETER = -28,
+    JSON_PARSE_SAMPLE_PARAMETER_FAILED = -28,
 
     // lookup configurate state
     PROCESS_INIT = 10000,
-    PROCESS_WORKMODE = 11000,
-    PROCESS_ALARM_CLOCK = 12000,
-    PROCESS_WORKAREA = 13000,
-    PROCESS_CLEANING_SPEED = 14000,
-    PROCESS_BACKWARD = 15000,
-    PROCESS_FORWARD = 16000,
-    PROCESS_LEFT = 17000,
-    PROCESS_RIGHT = 18000,
-    PROCESS_STOP_CLEANING = 19000,
-    PROCESS_RESET_MATERIAL = 20000,
-    PROCESS_POWER = 21000,
-    PROCESS_FINDME = 22000,
-    PROCESS_SPRAY = 23000,
-    PROCESS_MAP_FREQUENCY = 24000,
-    PROCESS_DND_SETTING = 25000,
-    PROCESS_LOCAL_UPDATE = 26000,
-    PROCESS_HONEYWELL_PARA = 27000,
-} e_honeywell_errno;
+    PROCESS_LOCAL_UPDATE = 11000,
+    PROCESS_SAMPLE_PARA = 12000,
+} e_sample_errno;
 
 #endif
