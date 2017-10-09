@@ -4,6 +4,7 @@
 .cproject
 .project
 .~lock.TaskList.ods#
+*.out
 
 build
 ./**/build
