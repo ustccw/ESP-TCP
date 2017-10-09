@@ -3,6 +3,7 @@
 *.o
 .cproject
 .project
+.~lock.TaskList.ods#
 
 build
 ./**/build
