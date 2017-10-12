@@ -1,8 +1,25 @@
 #ifndef TCP_SERVER_H_
 #define TCP_SERVER_H_
 
-#define DEFAULT_GWSERVER_PORT 80    // tcp server port
-#define MAX_JSON_LEN 2920           // max json length allowed
+//#include "freertos/FreeRTOS.h"
+//#include "freertos/semphr.h"
+
+#define DEFAULT_TCP_SERVER_PORT 80    // tcp server port
+#define MAX_JSON_LEN (1460 - 4)           // max json length allowed
+
+#define TCP_STREAM_HEAD_CHECK 0 // if MAX_JSON_LEN > 1460[default tcp MTU : 1500], must set TCP_STREAM_HEAD_CHECK to 1
+
+#define max(a,b) (((a) > (b)) ? (a) : (b))
+#define min(a,b) (((a) < (b)) ? (a) : (b))
+
+#define MAX_CLIENT_NUMBER 2  //  max tcp client counts
+
+struct conn_param
+{
+    int32_t conn_num;
+    int32_t sock_fd[MAX_CLIENT_NUMBER];
+};
+
 
 // e_sample_errno
 // e_sample_errno < 0 means that some error happened
@@ -32,4 +49,28 @@ typedef enum {
     PROCESS_SAMPLE_PARA = 12000,
 } e_sample_errno;
 
+
+
+
+typedef xSemaphoreHandle tcp_mutex;
+
+// create a mutex
+int mutex_new(tcp_mutex *p_mutex);
+
+// lock a mutex, immediate return if mutex is available, blocking if mutex is not available
+void mutex_lock(tcp_mutex *p_mutex);
+
+// unlock a mutex
+void mutex_unlock(tcp_mutex *p_mutex);
+
+// destroy a mutex
+void mutex_delete(tcp_mutex *p_mutex);
+
+void fatal_error(int line);
+
+int conn_prepare(int index);
+
+void data_destroy(int32_t index);
+
 #endif
+
