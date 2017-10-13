@@ -27,8 +27,8 @@
 #define EXAMPLE_WIFI_SSID CONFIG_WIFI_SSID
 #define EXAMPLE_WIFI_PASS CONFIG_WIFI_PASSWORD
 
-static char* sock_recv_data_buffer[MAX_CLIENT_NUMBER];
-static char* sock_send_data_buffer[MAX_CLIENT_NUMBER];
+static char *sock_recv_data_buffer[MAX_CLIENT_NUMBER];
+static char *sock_send_data_buffer[MAX_CLIENT_NUMBER];
 static uint32_t receive_cmd_length[MAX_CLIENT_NUMBER];
 static uint32_t parse_cmd_length[MAX_CLIENT_NUMBER];
 
@@ -50,28 +50,32 @@ static EventGroupHandle_t wifi_event_group;
 const int CONNECTED_BIT = BIT0;
 
 // create a mutex
-int mutex_new(tcp_mutex *p_mutex) {
+int mutex_new(tcp_mutex *p_mutex)
+{
     int xReturn = -1;
     *p_mutex = xSemaphoreCreateMutex();
     if (*p_mutex != NULL) {
         xReturn = 0;
-     }
+    }
 
-     return xReturn;
+    return xReturn;
 }
 
 // lock a mutex, immediate return if mutex is available, blocking if mutex is not available
-void mutex_lock(tcp_mutex *p_mutex) {
+void mutex_lock(tcp_mutex *p_mutex)
+{
     while (xSemaphoreTake(*p_mutex, portMAX_DELAY) != pdPASS);
 }
 
 // unlock a mutex
-void mutex_unlock(tcp_mutex *p_mutex){
+void mutex_unlock(tcp_mutex *p_mutex)
+{
     xSemaphoreGive(*p_mutex);
 }
 
 // destroy a mutex
-void mutex_delete(tcp_mutex *p_mutex){
+void mutex_delete(tcp_mutex *p_mutex)
+{
     vSemaphoreDelete(*p_mutex);
 }
 
@@ -190,11 +194,11 @@ int response_to_client(uint32_t cmd_id, int32_t sample_errno, int32_t index)
 // parse json and set config and save config
 int parse_json_data(int index)
 {
-    #if TCP_STREAM_HEAD_CHECK
-        char* buffer = sock_recv_data_buffer[index] + 4;
-    #else
-        char* buffer = sock_recv_data_buffer[index];
-    #endif
+#if TCP_STREAM_HEAD_CHECK
+    char *buffer = sock_recv_data_buffer[index] + 4;
+#else
+    char *buffer = sock_recv_data_buffer[index];
+#endif
 
     cJSON *root, *item, *value_item;
     int value_int = 0;
@@ -209,6 +213,7 @@ int parse_json_data(int index)
         response_to_client(cmd_id, JSON_PARSE_ROOT_FAILED, index); // Parse json root failed
         return -1;
     }
+
     int json_item_num = cJSON_GetArraySize(root);
     ESP_LOGI(TAG, "Total JSON Items:%d", json_item_num);
 
@@ -241,61 +246,34 @@ int parse_json_data(int index)
                 ESP_LOGI(TAG, "set:%s", value_str);
             } else {
                 response_to_client(cmd_id, JSON_PARSE_SAMPLE_PARAMETER_FAILED, index);
-                return -1;
+                sample_errno = JSON_PARSE_SAMPLE_PARAMETER_FAILED;
+                break;
             }
             current_state = PROCESS_SAMPLE_PARA + (atoi(value_str) & 0xff);
             // TODO: Config the sample parameter...
 
-        } else if (0 == strncmp(item->string, "local_update", sizeof("local_update") )) {
-            value_item = cJSON_GetObjectItem(item, "ssid");
-            if (value_item) {
-                value_str = value_item->valuestring;
-                ESP_LOGI(TAG, "local ssid:%s", value_str);
-            } else {
-                response_to_client(cmd_id, JSON_PARSE_SSID_FAILED, index);
-                return -1;
-            }
-            value_item = cJSON_GetObjectItem(item, "password");
-            if (value_item) {
-                value_str = value_item->valuestring;
-                ESP_LOGI(TAG, "local password:%s", value_str);
-            } else {
-                response_to_client(cmd_id, JSON_PARSE_PASSWD_FAILED, index);
-                return -1;
-            }
-            value_item = cJSON_GetObjectItem(item, "ota_server_addr");
-            if (value_item) {
-                value_str = value_item->valuestring;
-                ESP_LOGI(TAG, "local server addr:%s", value_str);
-            } else {
-                response_to_client(cmd_id, JSON_PARSE_OTA_SERVER_ADDR_FAILED, index);
-                return -1;
-            }
-            value_item = cJSON_GetObjectItem(item, "ota_server_port");
-            if (value_item) {
-                value_int = value_item->valueint;
-                ESP_LOGI(TAG, "local port:%d", value_int);
-
-            } else {
-                response_to_client(cmd_id, JSON_PARSE_OTA_SERVER_PORT_FAILED, index);
-                return -1;
-            }
-            // do OTA
-            current_state = PROCESS_LOCAL_UPDATE;
         } else {
             ESP_LOGE(TAG, "cannot parse JSON Item:%d", i);
             response_to_client(cmd_id, JSON_PARSE_NO_ITEM, index); // Error reponse
-            return -1;
+            break;
+
         }
     }
-    response_to_client(cmd_id, SAMPLE_OK, index);
-    return SAMPLE_OK;
+
+    if (sample_errno == SAMPLE_OK) {
+        response_to_client(cmd_id, SAMPLE_OK, index);
+    }
+    // memory release
+    cJSON_Delete(root);
+    return sample_errno;
 }
 
-void fatal_error(int line){
+void fatal_error(int line)
+{
     ESP_LOGE(TAG, "task pended due to fatal error happen, line:%d", line);
-    while(1){
-        vTaskDelay(1000/portTICK_RATE_MS);
+    // mutex_delete(&mutex_conn_param);
+    while (1) {
+        vTaskDelay(1000 / portTICK_RATE_MS);
     }
 }
 
@@ -309,7 +287,7 @@ static void tcp_server_task(void *pvParameter)
                         false, true, portMAX_DELAY);
     ESP_LOGI(TAG, "ESP32 Connected to WiFi ! Start TCP Server....");
 
-    ESP_LOGI(TAG, "date:%s time:%s", __DATE__, __TIME__);
+    ESP_LOGI(TAG, "date:%s time:%s", __DATE__, __TIME__);   // compile time
 
     while (1) {
         while (!got_ip_flag) {
@@ -393,7 +371,7 @@ static void tcp_server_task(void *pvParameter)
         struct sockaddr_in tcp_client_addr;
 
         while (1) {
-            if(server_socket == -1){
+            if (server_socket == -1) {
                 ESP_LOGW(TAG, "server socket error happened...");
                 break;
             }
@@ -401,39 +379,34 @@ static void tcp_server_task(void *pvParameter)
             ESP_LOGI(TAG, "prepare to receive new client...");
 
             bzero(&tcp_client_addr, sizeof(struct sockaddr_in));
-
             if ((client_fd = accept(server_socket, (struct sockaddr *)&tcp_client_addr, &addr_len)) == -1) {
                 ESP_LOGE(TAG, "accept error: return -1");
                 close(server_socket);
                 server_socket = -1;
                 continue;
             }
-
-            if(client_fd < 0){
+            if (client_fd < 0) {
                 ESP_LOGE(TAG, "accept error: return %d", client_fd);
                 close(server_socket);
                 server_socket = -1;
                 continue;
-            }else{
+            } else {
                 ESP_LOGI(TAG, "received new tcp client OK, client fd:%d ...", client_fd);
                 // do more control on tcp client
-                // such as setsockopt on tcp client by client fd
+                // such as setsockopt on tcp client, such as filter ip and so on by client fd
                 ESP_LOGI(TAG, "tcp client ip:%s port:%d\n", \
-                        inet_ntoa(tcp_client_addr.sin_addr.s_addr), ntohs(tcp_client_addr.sin_port));
+                         inet_ntoa(tcp_client_addr.sin_addr.s_addr), ntohs(tcp_client_addr.sin_port));
 
                 mutex_lock(&mutex_conn_param);
                 int32_t index = 0;
-                for (index = 0; index < MAX_CLIENT_NUMBER; ++index)
-                {
-                    if (m_conn_param.sock_fd[index] < 0)
-                    {
+                for (index = 0; index < MAX_CLIENT_NUMBER; ++index) {
+                    if (m_conn_param.sock_fd[index] < 0) {
                         break;
                     }
                 }
 
-                if (index < MAX_CLIENT_NUMBER)
-                {
-                    if(conn_prepare(index) != 0){
+                if (index < MAX_CLIENT_NUMBER) {
+                    if (conn_prepare(index) != 0) {
                         ESP_LOGE(TAG, "ESP32 error happened!");
                         fatal_error(__LINE__);
                     }
@@ -441,9 +414,25 @@ static void tcp_server_task(void *pvParameter)
                     m_conn_param.conn_num++;
                     m_conn_param.sock_fd[index] = client_fd;
                     ESP_LOGI(TAG, "tcp server accept index:%d, socket fd:%d\n", index, client_fd);
-                }
-                else
-                {
+// set keep-alive for every tcp client
+#if 1
+                    int keepAlive = 1;
+                    int keepIdle = 10;
+                    int keepInterval = 1;
+                    int keepCount = 3;
+                    int ret = 0;
+                    ret  = setsockopt(client_fd, SOL_SOCKET,  SO_KEEPALIVE, &keepAlive, sizeof(keepAlive));
+                    ret |= setsockopt(client_fd, IPPROTO_TCP, TCP_KEEPIDLE, &keepIdle, sizeof(keepIdle));
+                    ret |= setsockopt(client_fd, IPPROTO_TCP, TCP_KEEPINTVL, &keepInterval, sizeof(keepInterval));
+                    ret |= setsockopt(client_fd, IPPROTO_TCP, TCP_KEEPCNT, &keepCount, sizeof(keepCount));
+                    if (ret) {
+                        ESP_LOGE(TAG, "set socket option failed...");
+                        close(client_fd);
+                        server_socket = -1;
+                    }
+                    ESP_LOGI(TAG, "set client socket option ok...");
+#endif
+                } else {
                     close(client_fd);
                     ESP_LOGW(TAG, "tcp server too much connection..\n");
                 }
@@ -457,71 +446,66 @@ static void tcp_server_task(void *pvParameter)
     vTaskDelete(NULL);
 }
 
-void handle_read_event(int index){
+void handle_read_event(int index)
+{
     int ret = 0;
     ret = recv(m_conn_param.sock_fd[index], sock_recv_data_buffer[index], MAX_JSON_LEN + 4, 0);
 
-    if (ret > 0)
-    {
+    if (ret > 0) {
         print_debug(sock_recv_data_buffer[index], ret, "receive data");
         //
-        #if TCP_STREAM_HEAD_CHECK
-            receive_cmd_length[index] += ret;
-            if (receive_cmd_length[index] >= 4 && parse_cmd_length[index] == 0) {
-                parse_cmd_length[index] = ntohl(*( (int32_t *)sock_recv_data_buffer[index] ));
-                ESP_LOGI(TAG, "parse cmd length:%d", parse_cmd_length[index]);
-                if (parse_cmd_length[index] > (MAX_JSON_LEN + 4)) {
-                    response_to_client(0xffffffff, TCP_REV_PARSE_CMD_BEYOND_MAX_JSON_LEN, index); // parse incorrect length
-                    receive_cmd_length[index] = 0;
-                    parse_cmd_length[index] = 0;
-                    memset(sock_recv_data_buffer[index] , 0, MAX_JSON_LEN + 4);
-                    memset(sock_send_data_buffer[index] , 0, MAX_JSON_LEN + 4);
-                }
-            }
-            ESP_LOGI(TAG, "tcp server receive tcp packet len:%d[total receive len:%d]", ret, receive_cmd_length[index]);
-
-
-            if ((receive_cmd_length[index] == parse_cmd_length[index]) && (parse_cmd_length != 0) ) {      // one json command total received, ready to parse
-                if( parse_json_data(index) == SAMPLE_OK ){
-                    receive_cmd_length[index] = 0;
-                    parse_cmd_length[index] = 0;
-                    memset(sock_recv_data_buffer[index] , 0, MAX_JSON_LEN + 4);
-                    memset(sock_send_data_buffer[index] , 0, MAX_JSON_LEN + 4);
-                }else{
-                    ESP_LOGE(TAG, "had reset current socket resource...");
-                }
-            } else if (receive_cmd_length[index] > parse_cmd_length[index]) {
-                response_to_client(0xffffffff, TCP_REV_PARSE_CMD_LEN_ERROR, index); // incorrect length, restart to receive new tcp packet
+#if TCP_STREAM_HEAD_CHECK
+        receive_cmd_length[index] += ret;
+        if (receive_cmd_length[index] >= 4 && parse_cmd_length[index] == 0) {   // to parse head length information
+            parse_cmd_length[index] = ntohl(*( (int32_t *)sock_recv_data_buffer[index] ));
+            ESP_LOGI(TAG, "parse cmd length:%d", parse_cmd_length[index]);
+            if (parse_cmd_length[index] > (MAX_JSON_LEN + 4)) {
+                response_to_client(0xffffffff, TCP_REV_PARSE_CMD_BEYOND_MAX_JSON_LEN, index); // parse incorrect length
                 receive_cmd_length[index] = 0;
                 parse_cmd_length[index] = 0;
                 memset(sock_recv_data_buffer[index] , 0, MAX_JSON_LEN + 4);
                 memset(sock_send_data_buffer[index] , 0, MAX_JSON_LEN + 4);
-
-            } else {     // continue to receive rest tcp packet
-                ESP_LOGI(TAG, "wait for more tcp packet for a completely JSON data");
             }
-            //
-        #else
+        }
+        ESP_LOGI(TAG, "tcp server receive tcp packet len:%d[total receive len:%d]", ret, receive_cmd_length[index]);
 
-            if( parse_json_data(index) == SAMPLE_OK ){
+
+        if ((receive_cmd_length[index] == parse_cmd_length[index]) && (parse_cmd_length[index] != 0) ) {      // one json command total received, ready to parse
+            if ( parse_json_data(index) == SAMPLE_OK ) { // to parse cmd and respond to client
+                receive_cmd_length[index] = 0;
+                parse_cmd_length[index] = 0;
                 memset(sock_recv_data_buffer[index] , 0, MAX_JSON_LEN + 4);
                 memset(sock_send_data_buffer[index] , 0, MAX_JSON_LEN + 4);
-            }else{
+            } else {
                 ESP_LOGE(TAG, "had reset current socket resource...");
             }
+        } else if (receive_cmd_length[index] > parse_cmd_length[index]) {   // incorrect length, restart to receive new tcp packet
+            response_to_client(0xffffffff, TCP_REV_PARSE_CMD_LEN_ERROR, index);
+            receive_cmd_length[index] = 0;
+            parse_cmd_length[index] = 0;
+            memset(sock_recv_data_buffer[index] , 0, MAX_JSON_LEN + 4);
+            memset(sock_send_data_buffer[index] , 0, MAX_JSON_LEN + 4);
 
-        #endif
+        } else {     // continue to receive rest tcp packet
+            ESP_LOGI(TAG, "wait for more tcp packet for a completely JSON data");
+        }
+        //
+#else
 
-    }
-    else
-    {
+        if ( parse_json_data(index) == SAMPLE_OK ) {
+            memset(sock_recv_data_buffer[index] , 0, MAX_JSON_LEN + 4);
+            memset(sock_send_data_buffer[index] , 0, MAX_JSON_LEN + 4);
+        } else {
+            ESP_LOGE(TAG, "had reset current socket resource...");
+        }
+#endif
+    } else {
         data_destroy(index);
     }
-
-
 }
 
-static void tcp_recv_task(void *pvParameter){
+static void tcp_recv_task(void *pvParameter)
+{
     int32_t result = 0;
     int32_t index = 0;
     int32_t max_fd = 0;
@@ -529,21 +513,20 @@ static void tcp_recv_task(void *pvParameter){
     fd_set error_set;
     struct timeval timeout;
 
-    while (1)
-    {
+    while (1) {
+
         while (m_conn_param.conn_num == 0) {
             vTaskDelay(1000 / portTICK_RATE_MS);
         }
-        ESP_LOGI(TAG, "conn num > 0, traversal all socket...");
+        mutex_lock(&mutex_conn_param);
+        ESP_LOGI(TAG, "conn num:%d, select on connected socket...", m_conn_param.conn_num);
         FD_ZERO(&read_set);
         FD_ZERO(&error_set);
         timeout.tv_sec = 1;
         timeout.tv_usec = 0;
 
-        for (index = 0; index < MAX_CLIENT_NUMBER; index++)
-        {
-            if (m_conn_param.sock_fd[index] >= 0)
-            {
+        for (index = 0; index < MAX_CLIENT_NUMBER; index++) {
+            if (m_conn_param.sock_fd[index] >= 0) {
                 FD_SET(m_conn_param.sock_fd[index], &read_set);
                 FD_SET(m_conn_param.sock_fd[index], &error_set);
                 max_fd = max(m_conn_param.sock_fd[index], max_fd);
@@ -553,26 +536,21 @@ static void tcp_recv_task(void *pvParameter){
         result = select(max_fd + 1, &read_set, NULL, &error_set, &timeout);
 
         // lock before every possible modify
-        mutex_lock(&mutex_conn_param);
-        if(result == -1)
-        {
+
+        if (result == -1) {
             ESP_LOGE(TAG, "select error, return -1, errno:%d", errno);
-        }else if (result == 0){
+        } else if (result == 0) {
             ESP_LOGI(TAG, "select timeout");
-        }else if (result > 0)
-        {
-            for (index = 0; index < MAX_CLIENT_NUMBER; ++index)
-            {
-                if (FD_ISSET(m_conn_param.sock_fd[index], &error_set))
-                {
+        } else if (result > 0) {
+            for (index = 0; index < MAX_CLIENT_NUMBER; ++index) {
+                if (FD_ISSET(m_conn_param.sock_fd[index], &error_set)) { // keep-alive timeout or lose connect and so on
                     ESP_LOGE(TAG, "error set found, socketfd:%d, errno:%d", m_conn_param.sock_fd[index], errno);
                     data_destroy(index);
-                }else if (FD_ISSET(m_conn_param.sock_fd[index], &read_set)){
+                } else if (FD_ISSET(m_conn_param.sock_fd[index], &read_set)) {
                     handle_read_event(index);
                 }
             }
-        }
-        else{
+        } else {
             ESP_LOGE(TAG, "WTF");
         }
         mutex_unlock(&mutex_conn_param);
@@ -582,36 +560,21 @@ static void tcp_recv_task(void *pvParameter){
     vTaskDelete(NULL);
 }
 
-void data_init(){
+void data_init()
+{
 
     mutex_new(&mutex_conn_param);
-// mutex test
-#if 0
-    printf("file:%s function:%s line:%d\n",__FILE__,__FUNCTION__,__LINE__);
-    mutex_lock(&mutex_conn_param);
-    printf("file:%s function:%s line:%d\n",__FILE__,__FUNCTION__,__LINE__);
-    mutex_lock(&mutex_conn_param);
-    printf("file:%s function:%s line:%d\n",__FILE__,__FUNCTION__,__LINE__);
-    mutex_unlock(&mutex_conn_param);
-    printf("file:%s function:%s line:%d\n",__FILE__,__FUNCTION__,__LINE__);
-    mutex_lock(&mutex_conn_param);
-    printf("file:%s function:%s line:%d\n",__FILE__,__FUNCTION__,__LINE__);
-    mutex_delete(&mutex_conn_param);
-    printf("file:%s function:%s line:%d\n",__FILE__,__FUNCTION__,__LINE__);
-#endif
 
     m_conn_param.conn_num = 0;
     int32_t index = 0;
-    for (index = 0; index < MAX_CLIENT_NUMBER; ++index)
-    {
+    for (index = 0; index < MAX_CLIENT_NUMBER; ++index) {
         m_conn_param.sock_fd[index] = -1;
         sock_recv_data_buffer[index] = NULL;
         sock_send_data_buffer[index] = NULL;
     }
 
 #if TCP_STREAM_HEAD_CHECK
-    for (index = 0; index < MAX_CLIENT_NUMBER; ++index)
-    {
+    for (index = 0; index < MAX_CLIENT_NUMBER; ++index) {
         receive_cmd_length[index] = 0;
         parse_cmd_length[index] = 0;
     }
@@ -619,7 +582,8 @@ void data_init(){
 #endif
 }
 
-void data_destroy(int32_t index){
+void data_destroy(int32_t index)
+{
     close(m_conn_param.sock_fd[index]);
     m_conn_param.sock_fd[index] = -1;
     m_conn_param.conn_num--;
@@ -630,19 +594,20 @@ void data_destroy(int32_t index){
     ESP_LOGI(TAG, "destroy current socket resource..");
 }
 
-int conn_prepare(int index){
+int conn_prepare(int index)
+{
 
-    if(!(sock_recv_data_buffer[index] == NULL && sock_send_data_buffer[index] == NULL)){
+    if (!(sock_recv_data_buffer[index] == NULL && sock_send_data_buffer[index] == NULL)) {
         ESP_LOGE(TAG, "memory leak...");
         return -1;
     }
-    sock_recv_data_buffer[index] = (char*)malloc(MAX_JSON_LEN + 4);
-    sock_send_data_buffer[index] = (char*)malloc(MAX_JSON_LEN + 4);
+    sock_recv_data_buffer[index] = (char *)malloc(MAX_JSON_LEN + 4);
+    sock_send_data_buffer[index] = (char *)malloc(MAX_JSON_LEN + 4);
 
-    if(sock_recv_data_buffer[index] == NULL || sock_send_data_buffer[index] == NULL){
+    if (sock_recv_data_buffer[index] == NULL || sock_send_data_buffer[index] == NULL) {
         ESP_LOGE(TAG, "malloc failed...");
         return -1;
-    }else{
+    } else {
         memset(sock_recv_data_buffer[index] , 0, MAX_JSON_LEN + 4);
         memset(sock_send_data_buffer[index] , 0, MAX_JSON_LEN + 4);
     }
@@ -665,9 +630,9 @@ void app_main()
     initialise_wifi();
 
     data_init();
-
+    // tcp server task will start tcp server and receive new tcp client
     xTaskCreate(&tcp_server_task, "tcp_server_task", 4096, NULL, 5, NULL);
-
+    // tcp recv task will handle every tcp client event
     xTaskCreate(&tcp_recv_task, "tcp_recv_task", 4096, NULL, 5, NULL);
 
     // new more task to do other chores

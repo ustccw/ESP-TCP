@@ -5,17 +5,19 @@
 //#include "freertos/semphr.h"
 
 #define DEFAULT_TCP_SERVER_PORT 80    // tcp server port
+
 #define MAX_JSON_LEN (1460 - 4)           // max json length allowed
+
+#define MAX_CLIENT_NUMBER 2  //  max tcp client counts
 
 #define TCP_STREAM_HEAD_CHECK 0 // if MAX_JSON_LEN > 1460[default tcp MTU : 1500], must set TCP_STREAM_HEAD_CHECK to 1
 
 #define max(a,b) (((a) > (b)) ? (a) : (b))
 #define min(a,b) (((a) < (b)) ? (a) : (b))
 
-#define MAX_CLIENT_NUMBER 2  //  max tcp client counts
+typedef xSemaphoreHandle tcp_mutex;
 
-struct conn_param
-{
+struct conn_param {
     int32_t conn_num;
     int32_t sock_fd[MAX_CLIENT_NUMBER];
 };
@@ -49,10 +51,6 @@ typedef enum {
     PROCESS_SAMPLE_PARA = 12000,
 } e_sample_errno;
 
-
-
-
-typedef xSemaphoreHandle tcp_mutex;
 
 // create a mutex
 int mutex_new(tcp_mutex *p_mutex);
