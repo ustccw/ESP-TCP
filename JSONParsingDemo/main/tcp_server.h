@@ -9,7 +9,7 @@
 
 // if set TCP_STREAM_HEAD_CHECK to 1 [safe && recommended], there would must have a 4 Bytes length information in front of TCP Stream
 // if set TCP_STREAM_HEAD_CHECK to 0 [simple], there would a naked JSON data, without any length info
-#define TCP_STREAM_HEAD_CHECK 0       // if MAX_JSON_LEN > 1460 [default TCP MTU : 1500], must set TCP_STREAM_HEAD_CHECK to 1
+#define TCP_STREAM_HEAD_CHECK 1       // if MAX_JSON_LEN > 1460 [default TCP MTU : 1500], must set TCP_STREAM_HEAD_CHECK to 1
 
 
 #define max(a,b) (((a) > (b)) ? (a) : (b))
