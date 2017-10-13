@@ -1,16 +1,16 @@
 #ifndef TCP_SERVER_H_
 #define TCP_SERVER_H_
 
-//#include "freertos/FreeRTOS.h"
-//#include "freertos/semphr.h"
-
 #define DEFAULT_TCP_SERVER_PORT 80    // tcp server port
 
-#define MAX_JSON_LEN (1460 - 4)           // max json length allowed
+#define MAX_JSON_LEN (1460 - 4)       // max json length allowed, 4-Bytes reserved for TCP stream header
 
-#define MAX_CLIENT_NUMBER 2  //  max tcp client counts
+#define MAX_CLIENT_NUMBER 2           //  max tcp client counts
 
-#define TCP_STREAM_HEAD_CHECK 0 // if MAX_JSON_LEN > 1460[default tcp MTU : 1500], must set TCP_STREAM_HEAD_CHECK to 1
+// if set TCP_STREAM_HEAD_CHECK to 1 [safe && recommended], there would must have a 4 Bytes length information in front of TCP Stream
+// if set TCP_STREAM_HEAD_CHECK to 0 [simple], there would a naked JSON data, without any length info
+#define TCP_STREAM_HEAD_CHECK 0       // if MAX_JSON_LEN > 1460 [default TCP MTU : 1500], must set TCP_STREAM_HEAD_CHECK to 1
+
 
 #define max(a,b) (((a) > (b)) ? (a) : (b))
 #define min(a,b) (((a) < (b)) ? (a) : (b))
