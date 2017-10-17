@@ -254,6 +254,7 @@ int parse_json_data(int index)
 
         } else {
             ESP_LOGE(TAG, "cannot parse JSON Item:%d", i);
+            sample_errno = JSON_PARSE_NO_ITEM;
             response_to_client(cmd_id, JSON_PARSE_NO_ITEM, index); // Error reponse
             break;
 
