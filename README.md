@@ -13,3 +13,4 @@
 ### TODO:
 - **1. complete every component**
 - **2. make a new branch for Chinese customer**
+- **3. need to do more test case and press test**
