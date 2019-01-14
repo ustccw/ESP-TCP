@@ -16,19 +16,31 @@ void test_json(void) {
     uint8_t json[512] = {0};
 
     cJSON *root = cJSON_CreateObject();
+    cJSON *sensors = cJSON_CreateArray();
+    cJSON *id1 = cJSON_CreateObject();
+    cJSON *id2 = cJSON_CreateObject();
+    cJSON *iNumber = cJSON_CreateNumber(10);
 
-    cJSON *id = cJSON_CreateObject();
-    cJSON *params = cJSON_CreateObject();
+    cJSON_AddItemToObject(id1, "id", cJSON_CreateString("1"));
+    cJSON_AddItemToObject(id1, "temperature1", cJSON_CreateString("23"));
+    cJSON_AddItemToObject(id1, "temperature2", cJSON_CreateString("23"));
+    cJSON_AddItemToObject(id1, "humidity", cJSON_CreateString("55"));
+    cJSON_AddItemToObject(id1, "occupancy", cJSON_CreateString("1"));
+    cJSON_AddItemToObject(id1, "illumination", cJSON_CreateString("23"));
 
-    cJSON *version = cJSON_CreateObject();
-    cJSON *iNumber = cJSON_CreateNumber(1);
+    cJSON_AddItemToObject(id2, "id", cJSON_CreateString("2"));
+    cJSON_AddItemToObject(id2, "temperature1", cJSON_CreateString("23"));
+    cJSON_AddItemToObject(id2, "temperature2", cJSON_CreateString("23"));
+    cJSON_AddItemToObject(id2, "humidity", cJSON_CreateString("55"));
+    cJSON_AddItemToObject(id2, "occupancy", cJSON_CreateString("1"));
+    cJSON_AddItemToObject(id2, "illumination", cJSON_CreateString("23"));
 
-    cJSON_AddItemToObject(root, "id", iNumber);
+    cJSON_AddItemToObject(id2, "value", iNumber);
 
-    cJSON_AddItemToObject(version, "version", cJSON_CreateString("20180307"));
-    cJSON_AddItemToObject(root, "params", version);
+    cJSON_AddItemToArray(sensors, id1);
+    cJSON_AddItemToArray(sensors, id2);
 
-
+    cJSON_AddItemToObject(root, "sensors", sensors);
     char *str = cJSON_Print(root);
 
     uint32_t jslen = strlen(str);
